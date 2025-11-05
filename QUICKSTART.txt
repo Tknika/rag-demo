@@ -1,0 +1,156 @@
+GUÍA RÁPIDA DE INICIO
+=====================
+
+┌─────────────────────────────────────────────────────────────┐
+│                   CONFIGURACIÓN INICIAL                      │
+└─────────────────────────────────────────────────────────────┘
+
+1. Instalar dependencias:
+   $ chmod +x 1_setup.sh
+   $ ./1_setup.sh
+
+2. Configurar tu PDF en config.py:
+   PDF_PATH = "tu_documento.pdf"
+
+3. (Opcional) Ajustar modelos en config.py si es necesario
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                    OPCIÓN A: AUTOMÁTICO                      │
+└─────────────────────────────────────────────────────────────┘
+
+Ejecutar todo el pipeline de una vez:
+
+$ python run_pipeline.py
+
+Esto ejecuta automáticamente todos los pasos.
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                   OPCIÓN B: MANUAL (paso a paso)             │
+└─────────────────────────────────────────────────────────────┘
+
+Paso 1 - Parse PDF:
+$ python 2_parse_pdf.py
+
+Paso 2 - Test modelos:
+$ python 3_load_models.py
+
+Paso 3 - Test wrappers:
+$ python 4_wrappers.py
+
+Paso 4 - Procesar documento:
+$ python 5_process_document.py
+
+Paso 5 - Hacer queries:
+$ python 6_query.py --interactive
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                   OPCIÓN C: EJEMPLO RÁPIDO                   │
+└─────────────────────────────────────────────────────────────┘
+
+Ejecutar pipeline + queries de ejemplo:
+
+$ python ejemplo_completo.py
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                      ARQUITECTURA                            │
+└─────────────────────────────────────────────────────────────┘
+
+tu_documento.pdf
+      ↓
+   MinerU (GPU)
+      ↓
+Texto + Imágenes + Tablas
+      ↓
+QwenVL-4B → Descripciones de imágenes
+Qwen-8B → Análisis de tablas
+      ↓
+Knowledge Graph (bge-m3 embeddings)
+      ↓
+Query en español
+      ↓
+Qwen-8B + bge-m3 → Respuesta
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                   USO DE MEMORIA GPU                         │
+└─────────────────────────────────────────────────────────────┘
+
+Durante procesamiento (~20GB):
+  • Qwen-8B (4-bit): ~5GB
+  • QwenVL-4B (4-bit): ~3GB
+  • bge-m3: ~2GB
+  • MinerU: ~2GB
+  • Working: ~8GB
+
+Durante queries (~7GB):
+  • Qwen-8B (4-bit): ~5GB
+  • bge-m3: ~2GB
+  • Working: ~17GB libre
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                    ARCHIVOS DEL PROYECTO                     │
+└─────────────────────────────────────────────────────────────┘
+
+config.py              → Configuración central
+1_setup.sh             → Instalación
+2_parse_pdf.py         → Parsing con MinerU
+3_load_models.py       → Carga de modelos
+4_wrappers.py          → Adaptadores
+5_process_document.py  → Procesamiento
+6_query.py             → Sistema de queries
+run_pipeline.py        → Pipeline automático
+ejemplo_completo.py    → Ejemplo rápido
+requirements.txt       → Dependencias Python
+README.md              → Documentación completa
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                    QUERIES INTERACTIVAS                      │
+└─────────────────────────────────────────────────────────────┘
+
+$ python 6_query.py --interactive
+
+Comandos:
+  modo hybrid|local|global|naive  → Cambiar modo
+  salir|exit                      → Terminar
+
+Modos:
+  • hybrid: Vector + Graph (recomendado)
+  • local: Búsqueda local
+  • global: Búsqueda global
+  • naive: Vector básico
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                      TROUBLESHOOTING                         │
+└─────────────────────────────────────────────────────────────┘
+
+CUDA out of memory:
+  → Reduce batch size en embeddings
+  → Usa modelos más pequeños en config.py
+
+MinerU no encontrado:
+  $ pip install magic-pdf --break-system-packages
+
+Knowledge graph no existe:
+  → Ejecuta primero: python 5_process_document.py
+
+Primera ejecución lenta:
+  → Es normal, descarga modelos de HuggingFace
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                     OUTPUTS GENERADOS                        │
+└─────────────────────────────────────────────────────────────┘
+
+./output/              → PDFs parseados por MinerU
+./rag_storage/         → Knowledge graph (reutilizable)
+./parsed_content/      → Contenido intermedio del parsing
+
+
+¿Necesitas ayuda? Revisa README.md para documentación completa
