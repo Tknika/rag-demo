@@ -1,5 +1,4 @@
 # PoC RAG-Anything + HuggingFace (Local)
-
 Sistema RAG multimodal usando modelos locales de HuggingFace para documentos PDF en español.
 
 ## Arquitectura
