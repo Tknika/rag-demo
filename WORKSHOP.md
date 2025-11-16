@@ -309,7 +309,7 @@ flowchart TD
 flowchart TD
     START([🚀 Inicio: python 2_query_rag.py])
     
-    START --> INPUT[👤 Usuario ingresa query<br/>"¿Qué es DeepSeek-OCR?"]
+    START --> INPUT[👤 Usuario ingresa query<br/>¿Qué es DeepSeek-OCR?]
     
     INPUT --> LOAD_SYSTEM[🔧 Cargar Sistema]
     
@@ -421,7 +421,7 @@ flowchart TD
     GENERATE[🤖 Qwen3 14B: Generar Respuesta]
     
     subgraph GENERATION [" 🤖 Response Generation "]
-        GEN1[System Prompt:<br/>"Eres un asistente experto..."]
+        GEN1[System Prompt:<br/>Eres un asistente experto...]
         GEN2[User Query + Contexto]
         GEN3[Temperature: 0.1<br/>Max tokens: 2048]
         GEN4[Streaming response]
@@ -467,7 +467,7 @@ flowchart TD
 
 ```mermaid
 graph TB
-    QUERY[Query: "¿Qué es DeepSeek-OCR?"]
+    QUERY[Query: ¿Qué es DeepSeek-OCR?]
     
     subgraph VECTOR_SEARCH [" 🔢 Vector Search "]
         V1[Embedizar query con BGE-M3]
@@ -570,7 +570,7 @@ sequenceDiagram
     
     Note over U,R: FASE 2: QUERY
     
-    U->>S: Ejecutar 2_query_rag.py "¿Qué es DeepSeek-OCR?"
+    U->>S: Ejecutar 2_query_rag.py con query
     S->>O: 1 llamada a BGE-M3 (embedizar query)
     O-->>S: Vector query [1024-dim]
     
@@ -733,11 +733,11 @@ sequenceDiagram
     
     U->>P: PDF con diagrama de arquitectura
     P->>P: Detectar imagen en página 3
-    P->>P: Extraer contexto:<br/>"Figure 2: DeepEncoder Architecture"
+    P->>P: Extraer contexto:<br/>Figure 2: DeepEncoder Architecture
     
     P->>V: 👁️ Nemotron-VL<br/>Imagen + contexto
     Note over V: Analiza imagen con IA
-    V-->>P: "The diagram shows a multi-layer<br/>architecture with SAM-base..."
+    V-->>P: The diagram shows a multi-layer<br/>architecture with SAM-base...
     
     P->>E: 🔢 BGE-M3<br/>Embedizar descripción
     E-->>P: Vector [1024-dim]
@@ -751,7 +751,7 @@ sequenceDiagram
     
     Note over U,K: QUERY SOBRE LA IMAGEN
     
-    U->>L: "Explica la arquitectura de DeepEncoder"
+    U->>L: Explica la arquitectura de DeepEncoder
     
     L->>E: 🔢 BGE-M3<br/>Embedizar query
     E-->>L: Vector query [1024-dim]
@@ -759,7 +759,7 @@ sequenceDiagram
     L->>VDB: Buscar chunks similares
     VDB-->>L: Top-3:<br/>1. Descripción imagen (score: 0.89)<br/>2. Texto sobre DeepEncoder (0.82)<br/>3. Tabla de componentes (0.76)
     
-    L->>G: Buscar nodo "DeepEncoder"
+    L->>G: Buscar nodo DeepEncoder
     G-->>L: Encontrado + relaciones:<br/>uses SAM-base, uses CLIP-large
     
     L->>K: Obtener contenido completo
@@ -768,7 +768,7 @@ sequenceDiagram
     L->>L: 🤖 Qwen3 14B<br/>Generar respuesta con contexto
     Note over L: Context incluye:<br/>- Descripción generada por Vision<br/>- Entidades relacionadas del grafo<br/>- Texto cercano en documento
     
-    L-->>U: "DeepEncoder es una arquitectura<br/>multi-capa que integra SAM-base<br/>y CLIP-large. Como se muestra<br/>en la Figura 2 (página 3),<br/>consta de..."
+    L-->>U: DeepEncoder es una arquitectura<br/>multi-capa que integra SAM-base<br/>y CLIP-large. Como se muestra<br/>en la Figura 2 página 3
     
     Note over U: ✅ Respuesta basada en<br/>contenido visual analizado<br/>por Vision Model
 ```
