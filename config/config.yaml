@@ -1,0 +1,22 @@
+ollama:
+  base_url: "http://localhost:11434"
+  llm_model: "qwen3:14b"
+  embedding_model: "bge-m3"
+
+openrouter:
+  base_url: "https://openrouter.ai/api/v1"
+  vision_model: "nvidia/nemotron-nano-12b-v2-vl"
+
+paths:
+  input_dir: "./data/input"
+  processed_dir: "./data/processed"
+  storage_dir: "./storage/rag_storage"
+
+mineru:
+  parse_method: "auto"
+  device: "cpu"
+
+rag:
+  enable_image_processing: true
+  enable_table_processing: true
+  enable_equation_processing: false

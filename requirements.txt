@@ -1,8 +1,8 @@
-torch>=2.0.0
-transformers>=4.35.0
-accelerate>=0.25.0
-bitsandbytes>=0.41.0
-sentencepiece>=0.1.99
-sentence-transformers>=2.2.0
 raganything
-Pillow>=10.0.0
+lightrag-hku
+ollama
+pyyaml
+python-dotenv
+requests
+numpy
+aiohttp

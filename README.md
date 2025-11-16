@@ -1,157 +1,137 @@
-# PoC RAG-Anything + HuggingFace (Local)
-Sistema RAG multimodal usando modelos locales de HuggingFace para documentos PDF en español.
+# RAG Multimodal PoC
+
+Prueba de concepto de un sistema RAG multimodal que procesa documentos PDF con texto, tablas e imágenes.
 
 ## Arquitectura
 
+**Modelos:**
+- **LLM Local:** Qwen 2.5 8B (via Ollama) - Generación de respuestas
+- **Embeddings Local:** bge-m3 (via Ollama) - Vectorización de texto
+- **Vision Multimodal:** nvidia/nemotron-nano-12b-v2-vl (via OpenRouter) - Análisis de imágenes
+
+**Procesamiento:**
+- **Parser:** MinerU - Extracción de contenido de PDFs
+- **Backend RAG:** LightRAG - Base de datos vectorial y knowledge graph
+
+## Estructura del Proyecto
+
 ```
-PDF → MinerU → Texto/Imágenes/Tablas → RAGAnything → Knowledge Graph
-                                            ↓
-                            Qwen-8B + QwenVL + bge-m3
-                                            ↓
-                                    Query en español
+rag-multimodal-poc/
+├── config/
+│   └── config.yaml              # Configuración de modelos
+├── data/
+│   ├── input/                   # Colocar PDFs aquí
+│   └── processed/               # Output temporal de MinerU
+├── storage/
+│   └── rag_storage/             # Base de datos vectorial (generada)
+├── src/
+│   ├── models.py                # Wrappers para modelos
+│   └── utils.py                 # Utilidades
+├── 1_index_documents.py         # FASE 1: Indexar documentos
+├── 2_query_rag.py               # FASE 2: Realizar queries
+├── requirements.txt
+└── .env                         # API keys
 ```
 
-## Estructura del proyecto
+## Instalación
 
+### 1. Prerequisitos
+
+**Ollama instalado y ejecutando:**
+```bash
+# Verificar que Ollama esté corriendo
+ollama --version
+
+# Descargar modelos necesarios
+ollama pull qwen2.5:8b
+ollama pull bge-m3
 ```
-poc-rag/
-├── config.py              # Configuración central
-├── 1_setup.sh             # Instalación de dependencias
-├── 2_parse_pdf.py         # Parsing con MinerU
-├── 3_load_models.py       # Carga de modelos locales
-├── 4_wrappers.py          # Adaptadores para RAGAnything
-├── 5_process_document.py  # Procesamiento del documento
-└── 6_query.py             # Sistema de queries
+
+**Python 3.10+**
+
+### 2. Instalar dependencias
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Configurar API Key
+
+Editar `.env` y agregar tu OpenRouter API key:
+```
+OPENROUTER_API_KEY=tu_api_key_real
 ```
 
 ## Uso
 
-### 1. Setup inicial
+### FASE 1: Indexar Documentos
+
+1. Colocar archivos PDF en `data/input/`
+
+2. Ejecutar indexación:
+```bash
+python 1_index_documents.py
+```
+
+Este proceso:
+- Extrae texto, tablas e imágenes de los PDFs con MinerU
+- Genera embeddings con bge-m3
+- Analiza imágenes con nvidia/nemotron
+- Crea knowledge graph con Qwen 8B
+- Almacena todo en `storage/rag_storage/`
+
+### FASE 2: Realizar Queries
+
+Una vez indexados los documentos:
 
 ```bash
-chmod +x 1_setup.sh
-./1_setup.sh
+python 2_query_rag.py "¿Qué dice sobre el tema X?"
+python 2_query_rag.py "Resume la tabla de resultados del capítulo 2"
+python 2_query_rag.py "Explica el diagrama de la página 5"
 ```
 
-### 2. Configurar tu PDF
+**Flujo de Query:**
+1. Query de texto del usuario
+2. Búsqueda vectorial con bge-m3
+3. Recuperación de contexto (texto + tablas + imágenes)
+4. Si hay imágenes → nvidia/nemotron las analiza
+5. Qwen 8B genera respuesta final
 
-Edita `config.py` y cambia:
-```python
-PDF_PATH = "ruta/a/tu/documento.pdf"
-```
+## Configuración
 
-### 3. Opción A: Pipeline completo (recomendado)
+Editar `config/config.yaml` para ajustar:
 
-```bash
-# Procesar documento (incluye parsing + construcción del knowledge graph)
-python 5_process_document.py
+```yaml
+ollama:
+  llm_model: "qwen2.5:8b"          # Cambiar modelo LLM
+  embedding_model: "bge-m3"         # Cambiar modelo embeddings
 
-# Hacer queries
-python 6_query.py --interactive
-```
+openrouter:
+  vision_model: "nvidia/nemotron-nano-12b-v2-vl"  # Cambiar modelo vision
 
-### 4. Opción B: Paso a paso
-
-```bash
-# Paso 1: Parsear PDF con MinerU
-python 2_parse_pdf.py
-
-# Paso 2: Test de modelos
-python 3_load_models.py
-
-# Paso 3: Test de wrappers
-python 4_wrappers.py
-
-# Paso 4: Procesar documento
-python 5_process_document.py
-
-# Paso 5: Queries
-python 6_query.py --interactive
-```
-
-## Modos de query
-
-- **hybrid**: Combina vector search + graph traversal (recomendado)
-- **local**: Búsqueda local en el grafo
-- **global**: Búsqueda global
-- **naive**: Vector search básico
-
-Cambiar modo en interactivo:
-```
-[hybrid] Pregunta: modo local
-```
-
-## Ejemplos de queries
-
-```
-¿Cuál es el tema principal del documento?
-Resume el contenido de las tablas
-¿Qué información aparece en las imágenes?
-Explica los conceptos clave del documento
-```
-
-## Gestión de memoria GPU (24GB VRAM)
-
-### Durante procesamiento:
-- Qwen-8B (4-bit): ~5GB
-- QwenVL (4-bit): ~3GB
-- bge-m3: ~2GB
-- MinerU: ~2GB
-- Working: ~12GB libre
-
-### Durante queries:
-- Qwen-8B (4-bit): ~5GB
-- bge-m3: ~2GB
-- Working: ~17GB libre
-
-El script descarga automáticamente el Vision Model después del procesamiento.
-
-## Troubleshooting
-
-### Error: CUDA out of memory
-- Reducir batch size en embeddings
-- Usar modelos más pequeños
-- Procesar menos imágenes simultáneamente
-
-### Error: MinerU no encontrado
-```bash
-pip install magic-pdf --break-system-packages
-mineru --version
-```
-
-### Error: Knowledge graph no encontrado
-Ejecuta primero `5_process_document.py`
-
-## Personalización
-
-### Cambiar modelos
-
-Edita `config.py`:
-```python
-LLM_MODEL = "tu/modelo"
-VISION_MODEL = "tu/vision-model"
-EMBEDDING_MODEL = "tu/embedding-model"
-```
-
-### Cambiar configuración MinerU
-
-Edita `config.py`:
-```python
-MINERU_PARSE_METHOD = "ocr"  # auto, ocr, txt
-MINERU_LANG = "es"
-```
-
-### Deshabilitar procesamiento de imágenes/tablas
-
-Edita `config.py`:
-```python
-ENABLE_IMAGE_PROCESSING = False
-ENABLE_TABLE_PROCESSING = False
+mineru:
+  parse_method: "auto"              # Opciones: auto, ocr, txt
+  device: "cpu"                     # Cambiar a "cuda" si tienes GPU
 ```
 
 ## Notas
 
-- Primera ejecución descarga modelos (puede tardar)
-- bge-m3 soporta español nativamente
-- Los embeddings se guardan en `rag_storage/`
-- El knowledge graph es reutilizable
+- La indexación solo se hace una vez (o cuando agregues nuevos documentos)
+- Las queries pueden ejecutarse múltiples veces sin re-indexar
+- Para agregar más documentos: colocar PDFs en `data/input/` y ejecutar `1_index_documents.py` nuevamente
+- MinerU descargará modelos automáticamente en la primera ejecución
+
+## Troubleshooting
+
+**Error: "Ollama connection refused"**
+- Verificar que Ollama esté ejecutándose: `ollama serve`
+
+**Error: "Model not found"**
+- Descargar el modelo: `ollama pull nombre_modelo`
+
+**Error: "OPENROUTER_API_KEY not found"**
+- Verificar que `.env` exista y contenga la API key
+
+**Procesamiento muy lento**
+- Cambiar `device: "cuda"` en `config.yaml` si tienes GPU
+- Reducir número de documentos para prueba inicial
